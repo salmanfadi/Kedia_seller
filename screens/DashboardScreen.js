@@ -18,8 +18,8 @@ import CommonStyles from '../CommonStyles';
 
 
 AWS.config.update({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    accessKeyId: 'AKIA6G75D6KWW5YOSCUC',
+    secretAccessKey: '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',
     region: 'eu-north-1',
 });
 
