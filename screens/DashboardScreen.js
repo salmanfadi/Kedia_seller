@@ -18,10 +18,11 @@ import CommonStyles from '../CommonStyles';
 
 
 AWS.config.update({
-  accessKeyId: 'AKIA6G75D6KWW5YOSCUC', // Replace with your Access Key
-  secretAccessKey: 'lJhxcCBh8Fn7YQb80XCnpBPYDYMgo+sbVi8zSZqd', // Replace with your Secret Key
-  region: 'eu-north-1', // Replace with your region
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    region: 'eu-north-1',
 });
+
 
 const s3 = new AWS.S3({
   signatureVersion: 'v4', // Explicitly set to AWS4-HMAC-SHA256

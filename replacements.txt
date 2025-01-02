@@ -1,0 +1,2 @@
+your-access-key-id==>REDACTED_ACCESS_KEY_ID
+your-secret-access-key==>REDACTED_SECRET_KEY
