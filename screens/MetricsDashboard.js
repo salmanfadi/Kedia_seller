@@ -20,11 +20,7 @@ const MetricsDashboard = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [shopPaused, setShopPaused] = useState(false);
 
-<<<<<<< HEAD
   const baseURL = 'https://0d8af6e4-9d6b-496b-8a08-4d699be941db.mock.pstmn.io/';
-=======
-  const baseURL = 'https://720b64ea-dd06-4f91-a0e5-5704da4867fd.mock.pstmn.io';
->>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
 
   useEffect(() => {
     if (activeTab === 'Inventory') fetchInventory();

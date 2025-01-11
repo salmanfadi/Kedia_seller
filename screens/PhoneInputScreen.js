@@ -26,27 +26,15 @@ const PhoneInputScreen = ({ navigation }) => {
       Alert.alert('Missing OTP', 'Please enter the OTP.');
       return;
     }
-<<<<<<< HEAD
     navigation.navigate('Dashboard', { phone });
-=======
-    navigation.navigate('Dashboard');
->>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
   };
 
   return (
     <KeyboardAvoidingView style={CommonStyles.container} behavior="height">
       <ScrollView contentContainerStyle={{ alignItems: 'center' }}>
-<<<<<<< HEAD
         <Image source={require('../assets/logo.png')} style={CommonStyles.logoImage} />
         <Text style={CommonStyles.tagline}>Fast. Reliable. At Your Doorsteps</Text>
 
-=======
-        {/* Logo and Tagline */}
-        <Image source={require('../assets/logo.png')} style={CommonStyles.logoImage} />
-        <Text style={CommonStyles.tagline}>Fast. Reliable. At Your Doorsteps</Text>
-
-        {/* Phone Input */}
->>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
         <View style={[CommonStyles.input, { flexDirection: 'row', alignItems: 'center' }]}>
           <Text style={{ fontSize: 16, fontWeight: 'bold', marginRight: 10, color: '#6a1b9a' }}>
             +91
@@ -61,10 +49,6 @@ const PhoneInputScreen = ({ navigation }) => {
           />
         </View>
 
-<<<<<<< HEAD
-=======
-        {/* OTP Input */}
->>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
         <TextInput
           placeholder="Enter OTP"
           keyboardType="numeric"
@@ -74,18 +58,10 @@ const PhoneInputScreen = ({ navigation }) => {
           style={CommonStyles.input}
         />
 
-<<<<<<< HEAD
-=======
-        {/* Continue Button */}
->>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
         <TouchableOpacity style={CommonStyles.button} onPress={handleContinue}>
           <Text style={CommonStyles.buttonText}>Continue</Text>
         </TouchableOpacity>
 
-<<<<<<< HEAD
-=======
-        {/* Register Button */}
->>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
         <TouchableOpacity
           style={[CommonStyles.button, { backgroundColor: '#d1c4e9' }]}
           onPress={() => navigation.navigate('Register')}

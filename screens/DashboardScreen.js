@@ -10,7 +10,6 @@ import {
   Image,
 } from 'react-native';
 import axios from 'axios';
-<<<<<<< HEAD
 import Icon from 'react-native-vector-icons/FontAwesome';
 import CommonStyles from '../CommonStyles';
 
@@ -21,27 +20,6 @@ const DashboardScreen = ({ navigation, route }) => {
   const pendingOrdersAPI = `${baseURL}/seller?userId=${phone}&maxResults=7&paginationToken=xyz`;
   const allOrdersAPI = `${baseURL}/seller?userId=${phone}&maxResults=10&paginationToken=xyz&from=12345678&to=12345678`;
 
-=======
-import AWS from 'aws-sdk';
-import Icon from 'react-native-vector-icons/FontAwesome';
-import 'react-native-url-polyfill/auto';
-import 'react-native-get-random-values';
-import CommonStyles from '../CommonStyles';
-
-
-AWS.config.update({
-    accessKeyId: 'AKIA6G75D6KWW5YOSCUC',
-    secretAccessKey: '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',
-    region: 'eu-north-1',
-});
-
-
-const s3 = new AWS.S3({
-  signatureVersion: 'v4', // Explicitly set to AWS4-HMAC-SHA256
-});
-
-const DashboardScreen = ({ navigation }) => {
->>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
   const [activeTab, setActiveTab] = useState('Pending');
   const [pendingOrders, setPendingOrders] = useState([]);
   const [allOrders, setAllOrders] = useState([]);
@@ -49,22 +27,13 @@ const DashboardScreen = ({ navigation }) => {
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState({});
 
-<<<<<<< HEAD
   useEffect(() => {
     fetchOrders();
   }, [activeTab]);
-=======
-  const baseURL = 'https://720b64ea-dd06-4f91-a0e5-5704da4867fd.mock.pstmn.io';
-
-  useEffect(() => {
-    fetchOrders();
-  }, []);
->>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
 
   const fetchOrders = async () => {
     try {
       setLoading(true);
-<<<<<<< HEAD
       const apiURL = activeTab === 'Pending' ? pendingOrdersAPI : allOrdersAPI;
       const response = await axios.get(apiURL);
       const orders = response.data.orders;
@@ -74,13 +43,6 @@ const DashboardScreen = ({ navigation }) => {
       } else {
         setAllOrders(orders);
       }
-=======
-      const response = await axios.get(`${baseURL}/seller?userId=9731726006&maxResults=10`);
-      const orders = response.data.orders;
-
-      setPendingOrders(orders.filter((order) => order.currStatus !== 'dispatched'));
-      setAllOrders(orders);
->>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
     } catch (err) {
       Alert.alert('Error', 'Failed to fetch orders.');
     } finally {
@@ -100,7 +62,6 @@ const DashboardScreen = ({ navigation }) => {
       const response = await axios.get(`${baseURL}/seller/?shopfrontId=sf-1&orderId=${orderId}`);
       const orderDetails = response.data.orderDetail;
 
-<<<<<<< HEAD
       const listingsWithUrls = orderDetails.listings.map((item) => ({
         ...item,
         s3Url: item.shortImg,
@@ -119,39 +80,6 @@ const DashboardScreen = ({ navigation }) => {
           )
         );
       }
-=======
-      const listingsWithUrls = await Promise.all(
-        orderDetails.listings.map(async (item) => {
-          if (item.shortImg) {
-            const s3Key = item.shortImg.replace('s3://tnn-app-test/', '');
-            try {
-              const imageUrl = await s3.getSignedUrlPromise('getObject', {
-                Bucket: 'tnn-app-test',
-                Key: s3Key,
-                Expires: 3600,
-              });
-              return { ...item, s3Url: imageUrl };
-            } catch (err) {
-              console.error(`Error generating signed URL for item ${item.id}:`, err);
-              return { ...item, s3Url: null };
-            }
-          }
-          return { ...item, s3Url: null };
-        })
-      );
-
-      setAllOrders((prevOrders) =>
-        prevOrders.map((order) =>
-          order.id === orderId ? { ...order, listings: listingsWithUrls } : order
-        )
-      );
-
-      setPendingOrders((prevOrders) =>
-        prevOrders.map((order) =>
-          order.id === orderId ? { ...order, listings: listingsWithUrls } : order
-        )
-      );
->>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
 
       setExpandedOrderId(orderId);
     } catch (err) {
@@ -163,19 +91,13 @@ const DashboardScreen = ({ navigation }) => {
 
   const handleNextStatus = async (order) => {
     try {
-<<<<<<< HEAD
       setLoadingDetails((prev) => ({ ...prev, [order.id]: true }));
   
       const requestBody = {
-=======
-      setLoading(true);
-      const response = await axios.post(`${baseURL}/seller`, {
->>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
         storefrontId: 'sf-1',
         orderId: order.id,
         currState: order.currStatus,
         nextState: order.nextStatus,
-<<<<<<< HEAD
       };
   
       const response = await axios.post(`${baseURL}/seller`, requestBody);
@@ -200,35 +122,10 @@ const DashboardScreen = ({ navigation }) => {
         setAllOrders((prevAllOrders) => updateOrders(prevAllOrders));
       } else {
         Alert.alert('Error', 'Failed to update order status.');
-=======
-      });
-
-      if (response.data.success) {
-        const nextState = response.data.nextState;
-
-        setPendingOrders((prevPendingOrders) =>
-          nextState
-            ? prevPendingOrders.map((item) =>
-                item.id === order.id
-                  ? { ...item, currStatus: nextState, nextStatus: response.data.nextNextStatus }
-                  : item
-              )
-            : prevPendingOrders.filter((item) => item.id !== order.id)
-        );
-
-        setAllOrders((prevAllOrders) =>
-          prevAllOrders.map((item) =>
-            item.id === order.id
-              ? { ...item, currStatus: nextState, nextStatus: response.data.nextNextStatus }
-              : item
-          )
-        );
->>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
       }
     } catch (err) {
       Alert.alert('Error', 'Failed to update order status.');
     } finally {
-<<<<<<< HEAD
       setLoadingDetails((prev) => ({ ...prev, [order.id]: false }));
     }
   };
@@ -247,36 +144,6 @@ const DashboardScreen = ({ navigation }) => {
   };
   
   
-=======
-      setLoading(false);
-    }
-  };
-
-  const handleCancelOrder = async (orderId) => {
-    try {
-      setLoading(true);
-      await axios.post(`${baseURL}/seller`, {
-        orderId,
-        currStatus: 'pending',
-      });
-
-      setAllOrders((prevOrders) =>
-        prevOrders.map((item) =>
-          item.id === orderId ? { ...item, currStatus: 'cancelled' } : item
-        )
-      );
-
-      setPendingOrders((prevPendingOrders) =>
-        prevPendingOrders.filter((item) => item.id !== orderId)
-      );
-    } catch (err) {
-      Alert.alert('Error', 'Failed to cancel the order.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
->>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
   const ordersToDisplay = activeTab === 'Pending' ? pendingOrders : allOrders;
 
   return (
@@ -286,7 +153,6 @@ const DashboardScreen = ({ navigation }) => {
           <Icon name="arrow-left" size={20} color="#ffffff" />
         </TouchableOpacity>
         <Text style={CommonStyles.headerText}>Manage Orders</Text>
-<<<<<<< HEAD
         <View style={styles.actionButtons}>
           <TouchableOpacity onPress={fetchOrders} style={CommonStyles.redirectButton}>
             <Icon name="refresh" size={20} color="#ffffff" />
@@ -298,14 +164,6 @@ const DashboardScreen = ({ navigation }) => {
             <Icon name="bar-chart" size={20} color="#ffffff" />
           </TouchableOpacity>
         </View>
-=======
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Metrics')}
-          style={CommonStyles.redirectButton}
-        >
-          <Icon name="bar-chart" size={20} color="#ffffff" />
-        </TouchableOpacity>
->>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
       </View>
 
       <View style={CommonStyles.tabContainer}>
@@ -344,7 +202,6 @@ const DashboardScreen = ({ navigation }) => {
                 {order.address?.landmark}
               </Text>
 
-<<<<<<< HEAD
               {expandedOrderId === order.id && order.listings && (
                 <View style={styles.orderDetailsContainer}>
                   <Text style={styles.orderDetailsTitle}>Order Items</Text>
@@ -404,58 +261,6 @@ const DashboardScreen = ({ navigation }) => {
 </View>
 
 
-=======
-              {activeTab === 'Pending' && (
-                <View style={styles.buttonContainer}>
-                  {order.currStatus !== 'dispatched' && order.currStatus !== 'delivered' && (
-                    <TouchableOpacity
-                      style={styles.cancelButton}
-                      onPress={() => handleCancelOrder(order.id)}
-                    >
-                      <Text style={styles.buttonText}>Cancel</Text>
-                    </TouchableOpacity>
-                  )}
-
-                  {order.nextStatus && (
-                    <TouchableOpacity
-                      style={styles.actionButton}
-                      onPress={() => handleNextStatus(order)}
-                    >
-                      <Text style={styles.buttonText}>
-                        {order.nextStatus.charAt(0).toUpperCase() + order.nextStatus.slice(1)}
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              )}
-
-              {expandedOrderId === order.id && (
-                <View style={styles.orderDetailsContainer}>
-                  {loadingDetails[order.id] ? (
-                    <ActivityIndicator size="small" color="#9c27b0" />
-                  ) : (
-                    <>
-                      <Text style={styles.orderDetailsTitle}>Order Items</Text>
-                      {order.listings.map((item) => (
-                        <View key={item.id} style={styles.itemRow}>
-                          <Image
-                            source={{ uri: item.s3Url || 'https://via.placeholder.com/100' }}
-                            style={styles.itemImage}
-                          />
-                          <View style={styles.itemDetails}>
-                            <Text style={styles.itemName}>{item.name}</Text>
-                            <Text style={styles.itemQuantity}>
-                              {item.quantity} {item.metric}
-                            </Text>
-                          </View>
-                          <Text style={styles.itemPrice}>₹{item.totalPrice}</Text>
-                        </View>
-                      ))}
-                    </>
-                  )}
-                </View>
-              )}
->>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
             </TouchableOpacity>
           ))
         )}
@@ -465,21 +270,12 @@ const DashboardScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-<<<<<<< HEAD
   ...CommonStyles,
-=======
-    ...CommonStyles,
-
->>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
   container: {
     flex: 1,
     backgroundColor: '#6a1b9a',
     padding: 10,
   },
-<<<<<<< HEAD
-=======
-
->>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
   orderCard: {
     backgroundColor: '#ffffff',
     borderRadius: 10,
@@ -517,7 +313,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
-<<<<<<< HEAD
   canceledText: {
     fontWeight: 'bold',
     fontSize: 14,
@@ -525,8 +320,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 5,
   },
-=======
->>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
   orderDetailsContainer: {
     marginTop: 10,
     padding: 10,
