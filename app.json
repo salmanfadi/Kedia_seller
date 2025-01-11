@@ -2,10 +2,6 @@
   "expo": {
     "name": "kedia_seller",
     "slug": "kedia_seller",
-<<<<<<< HEAD
-=======
-    "entryPoint": "./index.js",
->>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
