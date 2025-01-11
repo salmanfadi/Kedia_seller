@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  SafeAreaView,
   Alert,
   Image,
 } from 'react-native';
@@ -147,6 +148,7 @@ const DashboardScreen = ({ navigation, route }) => {
   const ordersToDisplay = activeTab === 'Pending' ? pendingOrders : allOrders;
 
   return (
+    <SafeAreaView style={CommonStyles.safeArea}>
     <View style={styles.container}>
       <View style={CommonStyles.headerContainer}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={CommonStyles.arrowContainer}>
@@ -266,6 +268,7 @@ const DashboardScreen = ({ navigation, route }) => {
         )}
       </ScrollView>
     </View>
+    </SafeAreaView>
   );
 };
 

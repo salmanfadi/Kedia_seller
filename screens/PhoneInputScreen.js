@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  SafeAreaView,
   ScrollView,
   KeyboardAvoidingView,
 } from 'react-native';
@@ -30,6 +31,7 @@ const PhoneInputScreen = ({ navigation }) => {
   };
 
   return (
+    <SafeAreaView style={CommonStyles.safeArea}>
     <KeyboardAvoidingView style={CommonStyles.container} behavior="height">
       <ScrollView contentContainerStyle={{ alignItems: 'center' }}>
         <Image source={require('../assets/logo.png')} style={CommonStyles.logoImage} />
@@ -70,6 +72,7 @@ const PhoneInputScreen = ({ navigation }) => {
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 

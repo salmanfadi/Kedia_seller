@@ -5,16 +5,18 @@ import {
   TextInput,
   StyleSheet,
   TouchableOpacity,
+  SafeAreaView,
   ScrollView,
   Alert,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
 import * as Location from 'expo-location';
 import axios from 'axios';
+import CommonStyles from '../CommonStyles';
 
 const RegisterScreen = ({ navigation }) => {
   const [geoCode, setGeoCode] = useState('');
   const [name, setName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [shopName, setShopName] = useState('');
   const [gstin, setGstin] = useState('');
   const [category, setCategory] = useState('');
@@ -22,14 +24,25 @@ const RegisterScreen = ({ navigation }) => {
   const [selectedDays, setSelectedDays] = useState([]);
   const [openTimeFrom, setOpenTimeFrom] = useState('');
   const [openTimeTo, setOpenTimeTo] = useState('');
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [showSubCategoryPicker, setShowSubCategoryPicker] = useState(false);
+  const [showOpenTimePicker, setShowOpenTimePicker] = useState(false);
+  const [showCloseTimePicker, setShowCloseTimePicker] = useState(false);
 
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const categories = ['Grocery', 'Electronics', 'Clothing'];
+  const subCategories = ['Mobile', 'Laptop', 'Accessories'];
+  const hours = Array.from({ length: 24 }, (_, i) => {
+    const hour = i % 12 === 0 ? 12 : i % 12;
+    const period = i < 12 ? 'AM' : 'PM';
+    return `${hour}:00 ${period}`;
+  });
 
   const toggleDaySelection = (day) => {
     if (selectedDays.includes(day)) {
-      setSelectedDays(selectedDays.filter((d) => d !== day)); // Remove day if already selected
+      setSelectedDays(selectedDays.filter((d) => d !== day));
     } else {
-      setSelectedDays([...selectedDays, day]); // Add day if not selected
+      setSelectedDays([...selectedDays, day]);
     }
   };
 
@@ -44,7 +57,6 @@ const RegisterScreen = ({ navigation }) => {
       let location = await Location.getCurrentPositionAsync({});
       const capturedGeoCode = `${location.coords.latitude}, ${location.coords.longitude}`;
       setGeoCode(capturedGeoCode);
-      console.log('Geo Code Captured:', capturedGeoCode);
     } catch (error) {
       console.error('Error capturing Geo Code:', error);
       Alert.alert('Error', 'Error capturing Geo Code.');
@@ -52,16 +64,22 @@ const RegisterScreen = ({ navigation }) => {
   };
 
   const handleRegister = async () => {
+    if (!phoneNumber) {
+      Alert.alert('Validation Error', 'Please enter a valid phone number.');
+      return;
+    }
+
     const requestBody = {
       name,
+      phoneNumber,
       shopfrontName: shopName,
       gstin,
       geoCode,
       category,
       subCategory,
-      openDays: selectedDays, // Send selected days
-      openTimeFrom,
-      openTimeTo,
+      shopOpenDays: selectedDays.map((day) => day.slice(0, 3)),
+      shopOpenTs: openTimeFrom,
+      shopCloseTs: openTimeTo,
     };
 
     try {
@@ -70,10 +88,9 @@ const RegisterScreen = ({ navigation }) => {
         requestBody
       );
 
-      console.log('API Response:', response.data);
       if (response.data.success) {
-        console.log('Navigation Triggered: Dashboard');
-        navigation.navigate('Dashboard');
+        Alert.alert('Registration Successful', `Shopfront ID: ${response.data.shopfrontId}`);
+        navigation.navigate('Dashboard', { phoneNumber });
       } else {
         Alert.alert('Registration Failed', 'Please try again.');
       }
@@ -83,153 +100,207 @@ const RegisterScreen = ({ navigation }) => {
     }
   };
 
-  const hours = Array.from({ length: 24 }, (_, i) => {
-    const hour = i % 12 === 0 ? 12 : i % 12;
-    const period = i < 12 ? 'AM' : 'PM';
-    return `${hour}:00 ${period}`;
-  });
-
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <View style={styles.container}>
-        <Text style={styles.tagline}>Register Your Shop</Text>
+    <SafeAreaView style={CommonStyles.safeArea}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.container}>
+          <Text style={styles.tagline}>Register Your Shop</Text>
 
-        {/* Input Fields */}
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Name</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter Full Name"
-            value={name}
-            onChangeText={setName}
-          />
-        </View>
-
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Shopfront</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter Shop Name"
-            value={shopName}
-            onChangeText={setShopName}
-          />
-        </View>
-
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>GSTIN</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter GST Regd No"
-            value={gstin}
-            onChangeText={setGstin}
-          />
-        </View>
-
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Geo Code</Text>
-          <TouchableOpacity style={styles.captureButton} onPress={captureGeoCode}>
-            <Text style={styles.captureButtonText}>
-              {geoCode ? geoCode : 'Capture'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Category/ Sub Category</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={category}
-              onValueChange={(itemValue) => setCategory(itemValue)}
-              style={styles.picker}
-            >
-              <Picker.Item label="Select Category" value="" />
-              <Picker.Item label="Grocery" value="grocery" />
-              <Picker.Item label="Electronics" value="electronics" />
-              <Picker.Item label="Clothing" value="clothing" />
-            </Picker>
+          {/* Input Fields */}
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Name</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter Full Name"
+              value={name}
+              onChangeText={setName}
+            />
           </View>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={subCategory}
-              onValueChange={(itemValue) => setSubCategory(itemValue)}
-              style={styles.picker}
-            >
-              <Picker.Item label="Select Sub Category" value="" />
-              <Picker.Item label="Mobile" value="mobile" />
-              <Picker.Item label="Laptop" value="laptop" />
-              <Picker.Item label="Accessories" value="accessories" />
-            </Picker>
-          </View>
-        </View>
 
-        {/* Days Selection */}
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Shop Open Days</Text>
-          <View style={styles.daysContainer}>
-            {days.map((day) => (
-              <TouchableOpacity
-                key={day}
-                style={[
-                  styles.dayButton,
-                  selectedDays.includes(day) && styles.dayButtonSelected,
-                ]}
-                onPress={() => toggleDaySelection(day)}
-              >
-                <Text
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Phone Number</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter Phone Number"
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+              keyboardType="phone-pad"
+            />
+          </View>
+
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Shopfront</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter Shop Name"
+              value={shopName}
+              onChangeText={setShopName}
+            />
+          </View>
+
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>GSTIN</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter GST Regd No"
+              value={gstin}
+              onChangeText={setGstin}
+            />
+          </View>
+
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Geo Code</Text>
+            <TouchableOpacity style={styles.captureButton} onPress={captureGeoCode}>
+              <Text style={styles.captureButtonText}>{geoCode ? geoCode : 'Capture'}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Category Field */}
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Category</Text>
+            <TouchableOpacity
+              style={styles.input}
+              onPress={() => setShowCategoryPicker(!showCategoryPicker)}
+            >
+              <Text>{category || 'Select Category'}</Text>
+            </TouchableOpacity>
+            {showCategoryPicker && (
+              <View style={styles.pickerContainer}>
+                {categories.map((cat, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => {
+                      setCategory(cat);
+                      setShowCategoryPicker(false);
+                    }}
+                    style={styles.pickerItem}
+                  >
+                    <Text>{cat}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* Sub Category Field */}
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Sub Category</Text>
+            <TouchableOpacity
+              style={styles.input}
+              onPress={() => setShowSubCategoryPicker(!showSubCategoryPicker)}
+            >
+              <Text>{subCategory || 'Select Sub Category'}</Text>
+            </TouchableOpacity>
+            {showSubCategoryPicker && (
+              <View style={styles.pickerContainer}>
+                {subCategories.map((subCat, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => {
+                      setSubCategory(subCat);
+                      setShowSubCategoryPicker(false);
+                    }}
+                    style={styles.pickerItem}
+                  >
+                    <Text>{subCat}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* Days Selection */}
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Shop Open Days</Text>
+            <View style={styles.daysContainer}>
+              {days.map((day) => (
+                <TouchableOpacity
+                  key={day}
                   style={[
-                    styles.dayButtonText,
-                    selectedDays.includes(day) && styles.dayButtonTextSelected,
+                    styles.dayButton,
+                    selectedDays.includes(day) && styles.dayButtonSelected,
                   ]}
+                  onPress={() => toggleDaySelection(day)}
                 >
-                  {day}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        <View style={styles.fieldContainer}>
-          <Text style={styles.label}>Shop Open/Close Timings</Text>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={openTimeFrom}
-              onValueChange={(itemValue) => setOpenTimeFrom(itemValue)}
-              style={styles.picker}
-            >
-              <Picker.Item label="From" value="" />
-              {hours.map((hour, index) => (
-                <Picker.Item key={index} label={hour} value={hour} />
+                  <Text
+                    style={[
+                      styles.dayButtonText,
+                      selectedDays.includes(day) && styles.dayButtonTextSelected,
+                    ]}
+                  >
+                    {day}
+                  </Text>
+                </TouchableOpacity>
               ))}
-            </Picker>
+            </View>
           </View>
-          <View style={styles.pickerContainer}>
-            <Picker
-              selectedValue={openTimeTo}
-              onValueChange={(itemValue) => setOpenTimeTo(itemValue)}
-              style={styles.picker}
+
+          {/* Shop Open/Close Timings */}
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Shop Open/Close Timings</Text>
+            <TouchableOpacity
+              style={styles.input}
+              onPress={() => setShowOpenTimePicker(!showOpenTimePicker)}
             >
-              <Picker.Item label="To" value="" />
-              {hours.map((hour, index) => (
-                <Picker.Item key={index} label={hour} value={hour} />
-              ))}
-            </Picker>
+              <Text>{openTimeFrom || 'Open Time'}</Text>
+            </TouchableOpacity>
+            {showOpenTimePicker && (
+              <View style={styles.pickerContainer}>
+                {hours.map((time, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => {
+                      setOpenTimeFrom(time);
+                      setShowOpenTimePicker(false);
+                    }}
+                    style={styles.pickerItem}
+                  >
+                    <Text>{time}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            <View style={{ marginBottom: 15 }} />
+            <TouchableOpacity
+              style={styles.input}
+              onPress={() => setShowCloseTimePicker(!showCloseTimePicker)}
+            >
+              <Text>{openTimeTo || 'Close Time'}</Text>
+            </TouchableOpacity>
+            {showCloseTimePicker && (
+              <View style={styles.pickerContainer}>
+                {hours.map((time, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => {
+                      setOpenTimeTo(time);
+                      setShowCloseTimePicker(false);
+                    }}
+                    style={styles.pickerItem}
+                  >
+                    <Text>{time}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
-        </View>
 
-        {/* Register Button */}
-        <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
-          <Text style={styles.registerButtonText}>Register</Text>
-        </TouchableOpacity>
+          {/* Register Button */}
+          <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
+            <Text style={styles.registerButtonText}>Register</Text>
+          </TouchableOpacity>
 
-        {/* Footer */}
-        <Text style={styles.footerText}>
-          By continuing, you agree to our{' '}
-          <Text style={{ textDecorationLine: 'underline', fontWeight: 'bold' }}>
-            Terms of Use & Privacy Policy
+          {/* Footer */}
+          <Text style={styles.footerText}>
+            By continuing, you agree to our{' '}
+            <Text style={{ textDecorationLine: 'underline', fontWeight: 'bold' }}>
+              Terms of Use & Privacy Policy
+            </Text>
           </Text>
-        </Text>
-      </View>
-    </ScrollView>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
@@ -269,14 +340,14 @@ const styles = StyleSheet.create({
   },
   pickerContainer: {
     backgroundColor: '#ffffff',
-    borderRadius: 25,
-    borderWidth: 1,
-    borderColor: '#dddddd',
-    marginBottom: 10,
+    borderRadius: 10,
+    marginTop: 10,
+    padding: 10,
   },
-  picker: {
-    height: 50,
-    color: '#424242',
+  pickerItem: {
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#dddddd',
   },
   captureButton: {
     backgroundColor: '#e74c3c',
@@ -292,7 +363,6 @@ const styles = StyleSheet.create({
   daysContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
   },
   dayButton: {
     backgroundColor: '#e0e0e0',
@@ -300,9 +370,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     margin: 5,
     alignItems: 'center',
-    justifyContent: 'center', // Added to ensure proper alignment
-    width: 100, // Set fixed width
-    height: 40, // Set fixed height
+    width: 100,
   },
   dayButtonSelected: {
     backgroundColor: '#e74c3c',

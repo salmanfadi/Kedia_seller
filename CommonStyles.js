@@ -1,6 +1,10 @@
 import { StyleSheet, Platform, StatusBar } from 'react-native';
 
 const CommonStyles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#6a1b9a',
+  },
   container: {
     flex: 1,
     backgroundColor: '#6a1b9a', // Purple background

@@ -7,6 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  SafeAreaView,
   Dimensions,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -83,6 +84,7 @@ const MetricsDashboard = ({ navigation }) => {
   };
 
   return (
+    <SafeAreaView style={CommonStyles.safeArea}>
     <View style={styles.container}>
       <View style={CommonStyles.headerContainer}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={CommonStyles.arrowContainer}>
@@ -214,6 +216,7 @@ const MetricsDashboard = ({ navigation }) => {
         </ScrollView>
       )}
     </View>
+    </SafeAreaView>
   );
 };
 
