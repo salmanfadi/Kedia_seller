@@ -13,12 +13,17 @@ import * as Location from 'expo-location';
 import axios from 'axios';
 
 const RegisterScreen = ({ navigation }) => {
+<<<<<<< HEAD
   const [geoCode, setGeoCode] = useState('');
+=======
+  const [geoCode, setGeoCode] = useState(null);
+>>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
   const [name, setName] = useState('');
   const [shopName, setShopName] = useState('');
   const [gstin, setGstin] = useState('');
   const [category, setCategory] = useState('');
   const [subCategory, setSubCategory] = useState('');
+<<<<<<< HEAD
   const [selectedDays, setSelectedDays] = useState([]);
   const [openTimeFrom, setOpenTimeFrom] = useState('');
   const [openTimeTo, setOpenTimeTo] = useState('');
@@ -33,6 +38,13 @@ const RegisterScreen = ({ navigation }) => {
     }
   };
 
+=======
+  const [openDayFrom, setOpenDayFrom] = useState('');
+  const [openDayTo, setOpenDayTo] = useState('');
+  const [openTimeFrom, setOpenTimeFrom] = useState('');
+  const [openTimeTo, setOpenTimeTo] = useState('');
+
+>>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
   const captureGeoCode = async () => {
     try {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -59,14 +71,23 @@ const RegisterScreen = ({ navigation }) => {
       geoCode,
       category,
       subCategory,
+<<<<<<< HEAD
       openDays: selectedDays, // Send selected days
+=======
+      openDayFrom,
+      openDayTo,
+>>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
       openTimeFrom,
       openTimeTo,
     };
 
     try {
       const response = await axios.post(
+<<<<<<< HEAD
         'https://0d8af6e4-9d6b-496b-8a08-4d699be941db.mock.pstmn.io/seller',
+=======
+        'https://720b64ea-dd06-4f91-a0e5-5704da4867fd.mock.pstmn.io/seller',
+>>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
         requestBody
       );
 
@@ -89,6 +110,11 @@ const RegisterScreen = ({ navigation }) => {
     return `${hour}:00 ${period}`;
   });
 
+<<<<<<< HEAD
+=======
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+>>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer}>
       <View style={styles.container}>
@@ -128,9 +154,13 @@ const RegisterScreen = ({ navigation }) => {
         <View style={styles.fieldContainer}>
           <Text style={styles.label}>Geo Code</Text>
           <TouchableOpacity style={styles.captureButton} onPress={captureGeoCode}>
+<<<<<<< HEAD
             <Text style={styles.captureButtonText}>
               {geoCode ? geoCode : 'Capture'}
             </Text>
+=======
+            <Text style={styles.captureButtonText}>Capture</Text>
+>>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
           </TouchableOpacity>
         </View>
 
@@ -162,6 +192,7 @@ const RegisterScreen = ({ navigation }) => {
           </View>
         </View>
 
+<<<<<<< HEAD
         {/* Days Selection */}
         <View style={styles.fieldContainer}>
           <Text style={styles.label}>Shop Open Days</Text>
@@ -185,6 +216,33 @@ const RegisterScreen = ({ navigation }) => {
                 </Text>
               </TouchableOpacity>
             ))}
+=======
+        <View style={styles.fieldContainer}>
+          <Text style={styles.label}>Shop Open Days</Text>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={openDayFrom}
+              onValueChange={(itemValue) => setOpenDayFrom(itemValue)}
+              style={styles.picker}
+            >
+              <Picker.Item label="From" value="" />
+              {days.map((day) => (
+                <Picker.Item key={day} label={day} value={day} />
+              ))}
+            </Picker>
+          </View>
+          <View style={styles.pickerContainer}>
+            <Picker
+              selectedValue={openDayTo}
+              onValueChange={(itemValue) => setOpenDayTo(itemValue)}
+              style={styles.picker}
+            >
+              <Picker.Item label="To" value="" />
+              {days.map((day) => (
+                <Picker.Item key={day} label={day} value={day} />
+              ))}
+            </Picker>
+>>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
           </View>
         </View>
 
@@ -289,6 +347,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
+<<<<<<< HEAD
   daysContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -315,6 +374,8 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontWeight: 'bold',
   },
+=======
+>>>>>>> 29eea835778a70e984f03ac8c8cc7591a2052e10
   registerButton: {
     backgroundColor: '#e74c3c',
     padding: 15,
