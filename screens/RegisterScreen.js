@@ -370,7 +370,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     margin: 5,
     alignItems: 'center',
-    width: 100,
+    minWidth: 80, // Adjusted to ensure enough width for "Wednesday"
+    flexGrow: 1,
   },
   dayButtonSelected: {
     backgroundColor: '#e74c3c',
@@ -378,6 +379,7 @@ const styles = StyleSheet.create({
   dayButtonText: {
     color: '#000000',
     fontSize: 14,
+    textAlign: 'center', // Ensure text is properly aligned
   },
   dayButtonTextSelected: {
     color: '#ffffff',
