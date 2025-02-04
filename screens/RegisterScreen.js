@@ -15,23 +15,43 @@ import CommonStyles from '../CommonStyles';
 
 const RegisterScreen = ({ navigation }) => {
   const [geoCode, setGeoCode] = useState('');
-  const [name, setName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [shopName, setShopName] = useState('');
   const [gstin, setGstin] = useState('');
   const [category, setCategory] = useState('');
   const [subCategory, setSubCategory] = useState('');
-  const [selectedDays, setSelectedDays] = useState([]);
+  const [selectedCloseDays, setSelectedCloseDays] = useState([]);
   const [openTimeFrom, setOpenTimeFrom] = useState('');
   const [openTimeTo, setOpenTimeTo] = useState('');
+  const [communitiesInput, setCommunitiesInput] = useState('');
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [showSubCategoryPicker, setShowSubCategoryPicker] = useState(false);
   const [showOpenTimePicker, setShowOpenTimePicker] = useState(false);
   const [showCloseTimePicker, setShowCloseTimePicker] = useState(false);
 
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-  const categories = ['Grocery', 'Electronics', 'Clothing'];
-  const subCategories = ['Mobile', 'Laptop', 'Accessories'];
+  const categories = [
+    'Grocery',
+    'Medicine',
+    'HomeFood',
+    'DailyEssentials',
+    'Liquor',
+    'Tobacco',
+    'Artisan',
+    'Snacks'
+  ];
+  
+  const subCategoriesMap = {
+    Grocery: ['FruitVegetables', 'Kirana'],
+    Medicine: ['OTC'],
+    DailyEssentials: ['Flower'],
+    Liquor: ['Nolo'],
+    Tobacco: ['Paan'],
+    HomeFood: ['HomeFood'],
+    Snacks: ['Snacks'],
+    Artisan: []
+  };
+
   const hours = Array.from({ length: 24 }, (_, i) => {
     const hour = i % 12 === 0 ? 12 : i % 12;
     const period = i < 12 ? 'AM' : 'PM';
@@ -39,11 +59,21 @@ const RegisterScreen = ({ navigation }) => {
   });
 
   const toggleDaySelection = (day) => {
-    if (selectedDays.includes(day)) {
-      setSelectedDays(selectedDays.filter((d) => d !== day));
+    if (selectedCloseDays.includes(day)) {
+      setSelectedCloseDays(selectedCloseDays.filter((d) => d !== day));
     } else {
-      setSelectedDays([...selectedDays, day]);
+      setSelectedCloseDays([...selectedCloseDays, day]);
     }
+  };
+
+  const parseTimeString = (timeStr) => {
+    if (!timeStr) return '';
+    const [time, period] = timeStr.split(' ');
+    const [hourStr] = time.split(':');
+    let hour = parseInt(hourStr, 10);
+    if (period === 'PM' && hour !== 12) hour += 12;
+    if (period === 'AM' && hour === 12) hour = 0;
+    return hour.toString();
   };
 
   const captureGeoCode = async () => {
@@ -55,50 +85,51 @@ const RegisterScreen = ({ navigation }) => {
       }
 
       let location = await Location.getCurrentPositionAsync({});
-      const capturedGeoCode = `${location.coords.latitude}, ${location.coords.longitude}`;
-      setGeoCode(capturedGeoCode);
+      setGeoCode(`${location.coords.latitude}, ${location.coords.longitude}`);
     } catch (error) {
-      console.error('Error capturing Geo Code:', error);
       Alert.alert('Error', 'Error capturing Geo Code.');
     }
   };
 
   const handleRegister = async () => {
-    if (!phoneNumber) {
-      Alert.alert('Validation Error', 'Please enter a valid phone number.');
+    if (!phoneNumber || !/^[0-9]{10}$/.test(phoneNumber)) {
+      Alert.alert('Validation Error', 'Please enter a valid 10-digit phone number.');
       return;
     }
-
+  
     const requestBody = {
-      name,
-      phoneNumber,
+      name: phoneNumber,
       shopfrontName: shopName,
-      gstin,
       geoCode,
-      category,
+      cat: category,
       subCategory,
-      shopOpenDays: selectedDays.map((day) => day.slice(0, 3)),
-      shopOpenTs: openTimeFrom,
-      shopCloseTs: openTimeTo,
+      shopCloseDays: selectedCloseDays.map(day => day.toUpperCase()),
+      shopOpenTs: parseTimeString(openTimeFrom),
+      shopCloseTs: parseTimeString(openTimeTo),
+      community: communitiesInput.split(',').map(c => c.trim()).filter(c => c),
+      ...(gstin && { gstin }),
     };
-
+  
     try {
       const response = await axios.post(
-        'https://0d8af6e4-9d6b-496b-8a08-4d699be941db.mock.pstmn.io/seller',
+        'http://ec2-13-60-227-45.eu-north-1.compute.amazonaws.com:8081/sf/register',
         requestBody
       );
-
-      if (response.data.success) {
-        Alert.alert('Registration Successful', `Shopfront ID: ${response.data.shopfrontId}`);
-        navigation.navigate('Dashboard', { phoneNumber });
-      } else {
-        Alert.alert('Registration Failed', 'Please try again.');
+  
+      if (response.data) {
+        const successMessage = response.data.message || 'Registration Successful!';
+        console.log(successMessage); // Log message if needed
+  
+        // ✅ Either Show Alert or Directly Navigate
+        navigation.replace('PhoneInput', { successMessage });
       }
     } catch (error) {
-      console.error('Error during registration:', error);
-      Alert.alert('Error', 'An error occurred during registration.');
+      const errorMessage =
+        error.response?.data?._embedded?.errors[0]?.message || 'Registration failed. Please check your inputs.';
+      Alert.alert('Registration Failed', errorMessage);
     }
   };
+  
 
   return (
     <SafeAreaView style={CommonStyles.safeArea}>
@@ -106,30 +137,22 @@ const RegisterScreen = ({ navigation }) => {
         <View style={styles.container}>
           <Text style={styles.tagline}>Register Your Shop</Text>
 
-          {/* Input Fields */}
-          <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter Full Name"
-              value={name}
-              onChangeText={setName}
-            />
-          </View>
-
+          {/* Phone Number */}
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Phone Number</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter Phone Number"
+              placeholder="Enter 10-digit Phone Number"
               value={phoneNumber}
               onChangeText={setPhoneNumber}
               keyboardType="phone-pad"
+              maxLength={10}
             />
           </View>
 
+          {/* Shop Information */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Shopfront</Text>
+            <Text style={styles.label}>Shop Name</Text>
             <TextInput
               style={styles.input}
               placeholder="Enter Shop Name"
@@ -139,23 +162,23 @@ const RegisterScreen = ({ navigation }) => {
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>GSTIN</Text>
+            <Text style={styles.label}>GSTIN (Optional)</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter GST Regd No"
+              placeholder="Enter GSTIN"
               value={gstin}
               onChangeText={setGstin}
             />
           </View>
 
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Geo Code</Text>
+            <Text style={styles.label}>Geo Location</Text>
             <TouchableOpacity style={styles.captureButton} onPress={captureGeoCode}>
-              <Text style={styles.captureButtonText}>{geoCode ? geoCode : 'Capture'}</Text>
+              <Text style={styles.captureButtonText}>{geoCode || 'Capture Location'}</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Category Field */}
+          {/* Category Selection */}
           <View style={styles.fieldContainer}>
             <Text style={styles.label}>Category</Text>
             <TouchableOpacity
@@ -166,68 +189,73 @@ const RegisterScreen = ({ navigation }) => {
             </TouchableOpacity>
             {showCategoryPicker && (
               <View style={styles.pickerContainer}>
-                {categories.map((cat, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    onPress={() => {
-                      setCategory(cat);
-                      setShowCategoryPicker(false);
-                    }}
-                    style={styles.pickerItem}
-                  >
-                    <Text>{cat}</Text>
-                  </TouchableOpacity>
-                ))}
+                <ScrollView nestedScrollEnabled={true}>
+                  {categories.map((cat) => (
+                    <TouchableOpacity
+                      key={cat}
+                      onPress={() => {
+                        setCategory(cat);
+                        setSubCategory('');
+                        setShowCategoryPicker(false);
+                      }}
+                      style={styles.pickerItem}
+                    >
+                      <Text>{cat}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
               </View>
             )}
           </View>
 
-          {/* Sub Category Field */}
-          <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Sub Category</Text>
-            <TouchableOpacity
-              style={styles.input}
-              onPress={() => setShowSubCategoryPicker(!showSubCategoryPicker)}
-            >
-              <Text>{subCategory || 'Select Sub Category'}</Text>
-            </TouchableOpacity>
-            {showSubCategoryPicker && (
-              <View style={styles.pickerContainer}>
-                {subCategories.map((subCat, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    onPress={() => {
-                      setSubCategory(subCat);
-                      setShowSubCategoryPicker(false);
-                    }}
-                    style={styles.pickerItem}
-                  >
-                    <Text>{subCat}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </View>
+          {/* Subcategory Selection */}
+          {subCategoriesMap[category]?.length > 0 && (
+            <View style={styles.fieldContainer}>
+              <Text style={styles.label}>Subcategory</Text>
+              <TouchableOpacity
+                style={styles.input}
+                onPress={() => setShowSubCategoryPicker(!showSubCategoryPicker)}
+              >
+                <Text>{subCategory || 'Select Subcategory'}</Text>
+              </TouchableOpacity>
+              {showSubCategoryPicker && (
+                <View style={styles.pickerContainer}>
+                  <ScrollView nestedScrollEnabled={true}>
+                    {subCategoriesMap[category]?.map((subCat) => (
+                      <TouchableOpacity
+                        key={subCat}
+                        onPress={() => {
+                          setSubCategory(subCat);
+                          setShowSubCategoryPicker(false);
+                        }}
+                        style={styles.pickerItem}
+                      >
+                        <Text>{subCat}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
+          )}
 
-          {/* Days Selection */}
+          {/* Closed Days Selection */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Shop Open Days</Text>
+            <Text style={styles.label}>Shop Closed Days</Text>
             <View style={styles.daysContainer}>
               {days.map((day) => (
                 <TouchableOpacity
                   key={day}
                   style={[
                     styles.dayButton,
-                    selectedDays.includes(day) && styles.dayButtonSelected,
+                    selectedCloseDays.includes(day) && styles.dayButtonSelected,
                   ]}
                   onPress={() => toggleDaySelection(day)}
                 >
-                  <Text
-                    style={[
-                      styles.dayButtonText,
-                      selectedDays.includes(day) && styles.dayButtonTextSelected,
-                    ]}
-                  >
+                  <Text style={[
+                    styles.dayButtonText,
+                    selectedCloseDays.includes(day) && styles.dayButtonTextSelected
+                  ]}>
                     {day}
                   </Text>
                 </TouchableOpacity>
@@ -235,68 +263,81 @@ const RegisterScreen = ({ navigation }) => {
             </View>
           </View>
 
-          {/* Shop Open/Close Timings */}
+          {/* Business Hours */}
           <View style={styles.fieldContainer}>
-            <Text style={styles.label}>Shop Open/Close Timings</Text>
+            <Text style={styles.label}>Business Hours</Text>
+            
+            {/* Opening Time */}
             <TouchableOpacity
               style={styles.input}
               onPress={() => setShowOpenTimePicker(!showOpenTimePicker)}
             >
-              <Text>{openTimeFrom || 'Open Time'}</Text>
+              <Text>{openTimeFrom || 'Select Opening Time'}</Text>
             </TouchableOpacity>
             {showOpenTimePicker && (
               <View style={styles.pickerContainer}>
-                {hours.map((time, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    onPress={() => {
-                      setOpenTimeFrom(time);
-                      setShowOpenTimePicker(false);
-                    }}
-                    style={styles.pickerItem}
-                  >
-                    <Text>{time}</Text>
-                  </TouchableOpacity>
-                ))}
+                <ScrollView nestedScrollEnabled={true}>
+                  {hours.map((time) => (
+                    <TouchableOpacity
+                      key={time}
+                      onPress={() => {
+                        setOpenTimeFrom(time);
+                        setShowOpenTimePicker(false);
+                      }}
+                      style={styles.pickerItem}
+                    >
+                      <Text>{time}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
               </View>
             )}
 
-            <View style={{ marginBottom: 15 }} />
+            {/* Closing Time */}
             <TouchableOpacity
-              style={styles.input}
+              style={[styles.input, { marginTop: 10 }]}
               onPress={() => setShowCloseTimePicker(!showCloseTimePicker)}
             >
-              <Text>{openTimeTo || 'Close Time'}</Text>
+              <Text>{openTimeTo || 'Select Closing Time'}</Text>
             </TouchableOpacity>
             {showCloseTimePicker && (
               <View style={styles.pickerContainer}>
-                {hours.map((time, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    onPress={() => {
-                      setOpenTimeTo(time);
-                      setShowCloseTimePicker(false);
-                    }}
-                    style={styles.pickerItem}
-                  >
-                    <Text>{time}</Text>
-                  </TouchableOpacity>
-                ))}
+                <ScrollView nestedScrollEnabled={true}>
+                  {hours.map((time) => (
+                    <TouchableOpacity
+                      key={time}
+                      onPress={() => {
+                        setOpenTimeTo(time);
+                        setShowCloseTimePicker(false);
+                      }}
+                      style={styles.pickerItem}
+                    >
+                      <Text>{time}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
               </View>
             )}
           </View>
 
+          {/* Communities Input */}
+          <View style={styles.fieldContainer}>
+            <Text style={styles.label}>Serving Communities</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter communities (comma-separated)"
+              value={communitiesInput}
+              onChangeText={setCommunitiesInput}
+            />
+          </View>
+
           {/* Register Button */}
           <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
-            <Text style={styles.registerButtonText}>Register</Text>
+            <Text style={styles.registerButtonText}>Complete Registration</Text>
           </TouchableOpacity>
 
-          {/* Footer */}
           <Text style={styles.footerText}>
-            By continuing, you agree to our{' '}
-            <Text style={{ textDecorationLine: 'underline', fontWeight: 'bold' }}>
-              Terms of Use & Privacy Policy
-            </Text>
+            By registering, you agree to our Terms of Service and Privacy Policy
           </Text>
         </View>
       </ScrollView>
@@ -307,99 +348,98 @@ const RegisterScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
-    paddingVertical: 30,
+    paddingVertical: 20,
     backgroundColor: '#6a1b9a',
   },
   container: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 15,
   },
   tagline: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#ffffff',
+    color: '#fff',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 25,
   },
   fieldContainer: {
-    marginBottom: 15,
+    marginBottom: 20,
+    zIndex: 1,
   },
   label: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 5,
+    color: '#fff',
+    marginBottom: 8,
+    fontWeight: '600',
   },
   input: {
-    backgroundColor: '#ffffff',
-    borderRadius: 25,
-    padding: 10,
-    fontSize: 14,
-    color: '#424242',
-    borderWidth: 1,
-    borderColor: '#dddddd',
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
   },
   pickerContainer: {
-    backgroundColor: '#ffffff',
-    borderRadius: 10,
-    marginTop: 10,
-    padding: 10,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    marginTop: 5,
+    maxHeight: 200,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   pickerItem: {
-    paddingVertical: 10,
+    padding: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#dddddd',
+    borderBottomColor: '#eee',
   },
   captureButton: {
-    backgroundColor: '#e74c3c',
-    padding: 10,
-    borderRadius: 25,
+    backgroundColor: '#ff5722',
+    borderRadius: 8,
+    padding: 12,
     alignItems: 'center',
   },
   captureButtonText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: 'bold',
+    color: '#fff',
+    fontWeight: '600',
   },
   daysContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: 8,
   },
   dayButton: {
     backgroundColor: '#e0e0e0',
     padding: 10,
     borderRadius: 20,
-    margin: 5,
-    alignItems: 'center',
-    width: 100,
+    minWidth: 90,
   },
   dayButtonSelected: {
-    backgroundColor: '#e74c3c',
+    backgroundColor: '#ff5722',
   },
   dayButtonText: {
-    color: '#000000',
-    fontSize: 14,
+    textAlign: 'center',
   },
   dayButtonTextSelected: {
-    color: '#ffffff',
-    fontWeight: 'bold',
+    color: '#fff',
+    fontWeight: '600',
   },
   registerButton: {
-    backgroundColor: '#e74c3c',
-    padding: 15,
-    borderRadius: 25,
+    backgroundColor: '#ff5722',
+    borderRadius: 8,
+    padding: 16,
     alignItems: 'center',
     marginTop: 20,
   },
   registerButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
+    color: '#fff',
     fontWeight: 'bold',
+    fontSize: 16,
   },
   footerText: {
-    marginTop: 20,
-    color: '#ffffff',
-    fontSize: 12,
+    color: '#fff',
     textAlign: 'center',
+    marginTop: 20,
+    fontSize: 12,
   },
 });
 
