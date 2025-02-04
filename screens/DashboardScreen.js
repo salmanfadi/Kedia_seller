@@ -69,10 +69,10 @@ const DashboardScreen = ({ navigation, route }) => {
 
   const fetchOrders = useCallback(
     async (loadMore = false) => {
-      if (!sfId || isLoadingRef.current) return; // Use ref instead of `loading` state
+      if (!sfId || isLoadingRef.current) return;
   
       console.log(`Loading orders for tab: ${activeTab}, loadMore: ${loadMore}`);
-      isLoadingRef.current = true; // Lock API call
+      isLoadingRef.current = true;
   
       try {
         const tabKey = activeTab;
@@ -102,33 +102,47 @@ const DashboardScreen = ({ navigation, route }) => {
           [tabKey]: { currentStart: newCurrentStart, hasMore: newHasMore },
         }));
   
-        if (loadMore) {
-          setPendingOrders((prev) => [
-            ...new Map([...prev, ...orderSummaries].map((item) => [item.orderId, item])).values(),
-          ]);
-          setAllOrders((prev) => [
-            ...new Map([...prev, ...orderSummaries].map((item) => [item.orderId, item])).values(),
-          ]);
+        if (tabKey === 'Pending') {
+          setPendingOrders((prev) =>
+            loadMore ? [...prev, ...orderSummaries] : orderSummaries
+          );
         } else {
-          tabKey === 'Pending' ? setPendingOrders(orderSummaries) : setAllOrders(orderSummaries);
+          setAllOrders((prev) =>
+            loadMore ? [...prev, ...orderSummaries] : orderSummaries
+          );
         }
       } catch (error) {
         console.error('Failed to fetch orders:', error);
       } finally {
-        isLoadingRef.current = false; // Unlock API call
+        isLoadingRef.current = false;
       }
     },
     [sfId, activeTab, pagination]
   );
   
   
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+  
+    setPagination((prev) => ({
+      ...prev,
+      [tab]: { currentStart: 0, hasMore: true },
+    }));
+  
+    if (tab === 'Pending') {
+      setPendingOrders([]);
+    } else {
+      setAllOrders([]);
+    }
+  };
+  
 
   useEffect(() => {
-    if (sfId && !loading) {
+    if (sfId) {
       console.log('Fetching orders for activeTab:', activeTab);
       fetchOrders();
     }
-  }, [sfId, activeTab]); // Ensures only runs when `sfId` or `activeTab` changes
+  }, [sfId, activeTab]); // ✅ Triggers fetchOrders when tab changes
   
 
   // Handle refresh
@@ -208,7 +222,77 @@ const DashboardScreen = ({ navigation, route }) => {
   
   const debouncedFetchOrderDetails = debounce(fetchOrderDetails, 300);
   
-  
+  // Handle next status
+  const handleNextStatus = async (order) => {
+    try {
+      setLoadingDetails((prev) => ({ ...prev, [order.orderId]: true }));
+
+      const response = await fetchData(`${baseURL}/orderDashboard/updateState`, {
+        method: 'POST',
+        data: {
+          orderId: order.orderId,
+          currState: order.currState,
+          nextState: order.nextState,
+        },
+      });
+
+      const { currState, nextState, terminal } = response;
+
+      const updateOrders = (orders) =>
+        orders.map((item) =>
+          item.orderId === order.orderId
+            ? {
+                ...item,
+                currState: currState,
+                nextState: nextState,
+                terminal: terminal,
+              }
+            : item
+        );
+
+      setPendingOrders((prev) => updateOrders(prev));
+      setAllOrders((prev) => updateOrders(prev));
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update status');
+    } finally {
+      setLoadingDetails((prev) => ({ ...prev, [order.orderId]: false }));
+    }
+  };
+
+  // Handle cancel order
+  const handleCancelOrder = async (orderId) => {
+    try {
+      setLoadingDetails((prev) => ({ ...prev, [orderId]: true }));
+
+      const response = await fetchData(`${baseURL}/orderDashboard/cancel`, {
+        method: 'POST',
+        data: { orderId },
+      });
+
+      const { currState, nextState, terminal } = response;
+
+      const updateOrders = (orders) =>
+        orders.map((item) =>
+          item.orderId === orderId
+            ? {
+                ...item,
+                currState: currState,
+                nextState: nextState,
+                terminal: terminal,
+              }
+            : item
+        );
+
+      setPendingOrders((prev) => updateOrders(prev));
+      setAllOrders((prev) => updateOrders(prev));
+    } catch (error) {
+      Alert.alert('Error', 'Failed to cancel order');
+    } finally {
+      setLoadingDetails((prev) => ({ ...prev, [orderId]: false }));
+    }
+  };
+
+
   // Memoize filtered orders
   const filteredOrders = useMemo(() => {
     return activeTab === 'Pending' ? pendingOrders : allOrders;
@@ -257,6 +341,7 @@ const DashboardScreen = ({ navigation, route }) => {
             ))}
           </View>
         )}
+
 
         {/* Buttons for pending orders */}
         {activeTab === 'Pending' && (
@@ -310,11 +395,11 @@ const DashboardScreen = ({ navigation, route }) => {
     <SafeAreaView style={CommonStyles.safeArea}>
       <View style={styles.container}>
         <View style={CommonStyles.headerContainer}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={CommonStyles.arrowContainer}
+        <TouchableOpacity
+            onPress={() => navigation.navigate('ProfileInfo', { phone })}
+            style={CommonStyles.profileButton}
           >
-            <Icon name="arrow-left" size={20} color="#ffffff" />
+            <Icon name="user-circle" size={24} color="#ffffff" />
           </TouchableOpacity>
           <Text style={CommonStyles.headerText}>Manage Orders</Text>
           <View style={styles.actionButtons}>
@@ -331,25 +416,20 @@ const DashboardScreen = ({ navigation, route }) => {
         </View>
 
         <View style={CommonStyles.tabContainer}>
-          <TouchableOpacity
-            style={[
-              CommonStyles.tab,
-              activeTab === 'Pending' && CommonStyles.activeTab,
-            ]}
-            onPress={() => setActiveTab('Pending')}
-          >
-            <Text style={CommonStyles.tabText}>Pending Orders</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              CommonStyles.tab,
-              activeTab === 'All' && CommonStyles.activeTab,
-            ]}
-            onPress={() => setActiveTab('All')}
-          >
-            <Text style={CommonStyles.tabText}>All Orders</Text>
-          </TouchableOpacity>
-        </View>
+  <TouchableOpacity
+    style={[CommonStyles.tab, activeTab === 'Pending' && CommonStyles.activeTab]}
+    onPress={() => handleTabChange('Pending')}
+  >
+    <Text style={CommonStyles.tabText}>Pending Orders</Text>
+  </TouchableOpacity>
+  <TouchableOpacity
+    style={[CommonStyles.tab, activeTab === 'All' && CommonStyles.activeTab]}
+    onPress={() => handleTabChange('All')}
+  >
+    <Text style={CommonStyles.tabText}>All Orders</Text>
+  </TouchableOpacity>
+</View>
+
 
         <FlatList
   data={filteredOrders}

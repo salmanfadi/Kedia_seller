@@ -9,6 +9,7 @@ import PhoneInputScreen from './screens/PhoneInputScreen';
 import RegisterScreen from './screens/RegisterScreen';
 import DashboardScreen from './screens/DashboardScreen';
 import MetricsDashboard from './screens/MetricsDashboard';
+import ProfileInfoScreen from './screens/ProfileInfoScreen';
 
 const Stack = createStackNavigator();
 
@@ -34,6 +35,11 @@ const App = () => {
         <Stack.Screen
           name="Dashboard"
           component={DashboardScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="ProfileInfo"
+          component={ProfileInfoScreen}
           options={{ headerShown: false }}
         />
         <Stack.Screen
