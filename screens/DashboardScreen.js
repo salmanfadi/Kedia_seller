@@ -102,14 +102,27 @@ const DashboardScreen = ({ navigation, route }) => {
           [tabKey]: { currentStart: newCurrentStart, hasMore: newHasMore },
         }));
   
+        // ✅ **Replace the existing setPendingOrders and setAllOrders logic with this:**
         if (tabKey === 'Pending') {
-          setPendingOrders((prev) =>
-            loadMore ? [...prev, ...orderSummaries] : orderSummaries
-          );
+          setPendingOrders((prev) => {
+            const mergedOrders = orderSummaries.map((newOrder) => {
+              const existingOrder = prev.find((o) => o.orderId === newOrder.orderId);
+              return existingOrder?.listings
+                ? { ...newOrder, listings: existingOrder.listings }
+                : newOrder;
+            });
+            return loadMore ? [...prev, ...mergedOrders] : mergedOrders;
+          });
         } else {
-          setAllOrders((prev) =>
-            loadMore ? [...prev, ...orderSummaries] : orderSummaries
-          );
+          setAllOrders((prev) => {
+            const mergedOrders = orderSummaries.map((newOrder) => {
+              const existingOrder = prev.find((o) => o.orderId === newOrder.orderId);
+              return existingOrder?.listings
+                ? { ...newOrder, listings: existingOrder.listings }
+                : newOrder;
+            });
+            return loadMore ? [...prev, ...mergedOrders] : mergedOrders;
+          });
         }
       } catch (error) {
         console.error('Failed to fetch orders:', error);
@@ -148,12 +161,12 @@ const DashboardScreen = ({ navigation, route }) => {
   // Handle refresh
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    setPagination((prev) => ({
+    setExpandedOrderId(null); // Reset expanded state
+    setPagination({
       Pending: { currentStart: 0, hasMore: true },
       All: { currentStart: 0, hasMore: true },
-    }));
-  
-    await fetchOrders(); // Ensures it only runs once
+    });
+    await fetchOrders();
     setIsRefreshing(false);
   };
 
@@ -220,7 +233,10 @@ const DashboardScreen = ({ navigation, route }) => {
     }
   }, [expandedOrderId, pendingOrders, allOrders]);
   
-  const debouncedFetchOrderDetails = debounce(fetchOrderDetails, 300);
+  const debouncedFetchOrderDetails = useMemo(
+    () => debounce(fetchOrderDetails, 300),
+    [fetchOrderDetails]
+  );
   
   // Handle next status
   const handleNextStatus = async (order) => {
@@ -431,12 +447,13 @@ const DashboardScreen = ({ navigation, route }) => {
 </View>
 
 
-        <FlatList
+<FlatList
   data={filteredOrders}
   renderItem={renderOrderItem}
   keyExtractor={(item) => `${item.orderId}-${activeTab}`}
   onEndReached={handleLoadMore}
-  onEndReachedThreshold={0.7} // Adjusted threshold to prevent unnecessary calls
+  onEndReachedThreshold={0.7}
+  extraData={expandedOrderId} // Add this line
   refreshControl={
     <RefreshControl
       refreshing={isRefreshing}
