@@ -38,14 +38,27 @@ const ProfileInfoScreen = ({ navigation, route }) => {
 
   const handleLogout = async () => {
     try {
-      await axios.post(`${BASE_URL}/logout`);
+      const sessionId = await AsyncStorage.getItem('sessionId');
+      if (!sessionId) {
+        console.log('No session ID found, redirecting to login...');
+        navigation.replace('PhoneInput');
+        return;
+      }
+  
+      await axios.post(`${BASE_URL}/logout`, {}, {
+        headers: { Authorization: `Bearer ${sessionId}` }
+      });
+  
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
       await AsyncStorage.removeItem('sessionId');
       await AsyncStorage.removeItem('phoneNumber');
       navigation.replace('PhoneInput');
-    } catch (error) {
-      Alert.alert('Error', 'Logout failed. Try again.');
     }
   };
+  
+  
   
 
   return (

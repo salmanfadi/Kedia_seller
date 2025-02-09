@@ -16,6 +16,8 @@ import CommonStyles from '../CommonStyles';
 
 const PAGE_SIZE = 10;
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 const MetricsDashboard = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState('Inventory');
   const [inventoryDetails, setInventoryDetails] = useState([]);
@@ -23,21 +25,30 @@ const MetricsDashboard = ({ navigation }) => {
   const [shopPaused, setShopPaused] = useState(false);
   const [currentStart, setCurrentStart] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [sfId, setSfId] = useState(null); // Store ShopFront ID
 
   const baseURL = 'http://ec2-13-60-227-45.eu-north-1.compute.amazonaws.com:8081';
 
   useEffect(() => {
-    if (activeTab === 'Inventory') fetchInventory();
-  }, [activeTab, currentStart]);
+    const getSfId = async () => {
+      const storedSfId = await AsyncStorage.getItem('sfId');
+      if (storedSfId) setSfId(storedSfId);
+    };
+    getSfId();
+  }, []);
+
+  useEffect(() => {
+    if (sfId && activeTab === 'Inventory') fetchInventory();
+  }, [sfId, activeTab, currentStart]);
 
   const fetchInventory = async (loadMore = false) => {
-    if (loading || (!loadMore && currentStart !== 0)) return;
+    if (loading || !sfId || (!loadMore && currentStart !== 0)) return;
 
     setLoading(true);
     try {
       const start = loadMore ? currentStart : 0;
       const response = await fetch(
-        `${baseURL}/metricDashboard/inventory?sfId=sf-S7Og-1738080145352&start=${start}`
+        `${baseURL}/metricDashboard/inventory?sfId=${sfId}&start=${start}`
       );
       const data = await response.json();
 
@@ -58,13 +69,14 @@ const MetricsDashboard = ({ navigation }) => {
   };
 
   const handleShopPauseToggle = async () => {
+    if (!sfId) return;
     setLoading(true);
     try {
       const endpoint = shopPaused ? `${baseURL}/sf/unpause` : `${baseURL}/sf/pause`;
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sfId: 'sf-S7Og-1738080145352' }),
+        body: JSON.stringify({ sfId }), // Use the stored ShopFront ID
       });
 
       if (response.ok) {
@@ -77,6 +89,7 @@ const MetricsDashboard = ({ navigation }) => {
       setLoading(false);
     }
   };
+
 
   const pieChartColors = [
     '#FF5733', // Bright Orange
